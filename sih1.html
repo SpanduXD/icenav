@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ICENAV | CRYO EVADERS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;600;700&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        /* --- CORE VARIABLES --- */
+        :root {
+            --bg: #090e17; 
+            --surface: #111827; 
+            --surface-light: #1f2937;
+            --primary: #00e5ff; 
+            --secondary: #3b82f6;
+            --alert: #ef4444; 
+            --warning: #f59e0b; 
+            --success: #10b981;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* --- IMMERSIVE BACKGROUND --- */
+        body::before {
+            content: '';
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh; z-index: -1;
+            background-image: url('ant1.png'); 
+            background-size: cover; background-position: center; background-repeat: no-repeat;
+            opacity: 0.12; pointer-events: none; mix-blend-mode: luminosity; 
+        }
+
+        .ambient-glow {
+            position: fixed; border-radius: 50%; filter: blur(100px); z-index: -1; opacity: 0.4; pointer-events: none;
+        }
+        .glow-1 { top: -10%; left: -10%; width: 50vw; height: 50vw; background: radial-gradient(circle, rgba(0,229,255,0.15) 0%, transparent 70%); }
+        .glow-2 { bottom: -10%; right: -10%; width: 40vw; height: 40vw; background: radial-gradient(circle, rgba(59,130,246,0.15) 0%, transparent 70%); }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: var(--surface-light); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+
+        /* --- NAVIGATION --- */
+        nav {
+            position: fixed; top: 0; width: 100%; padding: 1rem 5%;
+            display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+            background: rgba(9, 14, 23, 0.85); backdrop-filter: blur(16px);
+            z-index: 1000; border-bottom: 1px solid rgba(0, 229, 255, 0.1);
+        }
+
+        .nav-left { display: flex; align-items: center; }
+        .team-tag {
+            font-family: 'Fira Code', monospace; font-size: 20px; font-weight: 600;
+            color: var(--primary); letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(0, 229, 255, 0.4); display: flex; align-items: center; gap: 8px;
+        }
+        .team-tag::before { content: '[]'; color: var(--text-muted); letter-spacing: -2px; }
+
+        .logo {
+            font-size: 1.8rem; font-weight: 700; letter-spacing: 4px;
+            display: flex; align-items: center; gap: 6px; text-decoration: none; cursor: pointer;
+        }
+        .logo-icon { width: 1.8em; height: 1.8em; object-fit: contain; position: relative; z-index: 2; animation: float 4s ease-in-out infinite; }
+        .logo-text-container { display: inline-flex; padding-left: 4px; overflow: hidden; }
+        .logo-text {
+            font-size: 50px; font-weight: 700; letter-spacing: 4px;
+            background: linear-gradient(135deg, #ffffff, var(--primary));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 8px rgba(0,229,255,0.4));
+            position: relative; z-index: 1; transform: translateX(-120%); 
+            animation: slideOutLogo 1s cubic-bezier(0.16, 1, 0.3, 1) forwards 0.3s;
+        }
+
+        @keyframes slideOutLogo { 0% { transform: translateX(-120%); } 100% { transform: translateX(0); } }
+
+        .nav-links { display: flex; gap: 2rem; justify-content: flex-end; }
+        .nav-links a {
+            color: var(--text-muted); text-decoration: none; font-size: 0.85rem; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 1.5px; transition: color 0.3s; position: relative;
+        }
+        .nav-links a::after {
+            content: ''; position: absolute; width: 0; height: 2px; bottom: -6px; left: 0;
+            background-color: var(--primary); transition: width 0.3s ease; box-shadow: 0 0 8px var(--primary);
+        }
+        .nav-links a:hover { color: var(--primary); }
+        .nav-links a:hover::after { width: 100%; }
+
+        /* --- HERO & DASHBOARD --- */
+        .hero {
+            min-height: 100vh; padding: 140px 5% 60px;
+            display: flex; flex-direction: column; align-items: center; text-align: center;
+            position: relative; perspective: 1200px; 
+        }
+
+        .badge {
+            border: 1px solid rgba(0, 229, 255, 0.3); background: rgba(0, 229, 255, 0.05);
+            color: var(--primary); padding: 0.5rem 1.2rem; border-radius: 30px;
+            font-size: 0.85rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+            margin-bottom: 2rem; display: inline-flex; align-items: center; gap: 8px;
+            box-shadow: 0 0 15px rgba(0,229,255,0.1);
+        }
+
+        .js-type { visibility: hidden; }
+        .typewriter-container {
+            font-size: clamp(3rem, 7vw, 6rem); line-height: 1.1; margin-bottom: 1.5rem;
+            text-transform: uppercase; letter-spacing: -1px; font-weight: 800;
+            display: block; width: 100%;
+        }
+        h2.section-title.typewriter-container { font-size: 2.5rem; margin-bottom: 1rem; line-height: 1.3; }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #ffffff, var(--primary));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 40px rgba(0, 229, 255, 0.3);
+        }
+
+        .type-cursor {
+            display: inline-block; width: 3px; height: 1em; background-color: var(--primary);
+            vertical-align: baseline; margin-left: 6px; animation: blinkCursor 1s step-end infinite;
+            box-shadow: 0 0 10px var(--primary); -webkit-text-fill-color: initial; transform: translateY(0.1em); 
+        }
+
+        .subtitle { max-width: 800px; color: var(--text-muted); font-size: 1.15rem; margin-bottom: 4rem; }
+
+        .dashboard-wrapper { width: 100%; max-width: 1200px; transform-style: preserve-3d; }
+        .dashboard-ui {
+            background: rgba(13, 19, 30, 0.9); border: 1px solid rgba(0, 229, 255, 0.15);
+            border-radius: 16px; overflow: hidden; backdrop-filter: blur(20px);
+            box-shadow: 0 40px 80px -20px rgba(0,0,0,0.9), 0 0 40px rgba(0, 229, 255, 0.05);
+            display: grid; grid-template-columns: 350px 1fr;
+            text-align: left; transition: transform 0.1s ease-out; 
+        }
+
+        /* --- TELEMETRY PANEL --- */
+        .telemetry-panel { 
+            background: rgba(7, 11, 20, 0.95); padding: 2rem; border-right: 1px solid rgba(255,255,255,0.05); 
+            font-family: 'Fira Code', monospace; display: flex; flex-direction: column; gap: 1.5rem; z-index: 2;
+        }
+        .panel-header { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.8rem; margin-bottom: 1.2rem; }
+        .data-readout { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; font-size: 0.9rem; }
+        .data-label { color: var(--text-muted); }
+        .data-value { color: var(--text-main); font-weight: 600; }
+        .data-value.active { color: var(--primary); text-shadow: 0 0 10px var(--primary); }
+
+        .module-status { background: rgba(255,255,255,0.03); padding: 0.8rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 0.5rem; }
+        .module-title { font-size: 0.8rem; display: flex; align-items: center; gap: 8px; margin-bottom: 0.5rem; color: #fff; text-transform: uppercase; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); box-shadow: 0 0 8px var(--success); animation: pulse 2s infinite; }
+
+        .feed-container { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 0.5rem; }
+        .feed-card {
+            background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px; height: 80px; position: relative; overflow: hidden;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .feed-img1 { width: 100%; height: 100%; object-fit: cover; opacity: 0.6; transition: opacity 0.3s;rotate: 90deg; }
+        .feed-img { width: 100%; height: 100%; object-fit: cover; opacity: 0.6; transition: opacity 0.3s; }
+        .feed-card:hover .feed-img { opacity: 1; }
+        .feed-badge {
+            position: absolute; top: 4px; left: 4px; background: rgba(0,0,0,0.8);
+            border: 1px solid var(--primary); color: var(--primary); font-size: 0.55rem;
+            padding: 2px 6px; border-radius: 4px; z-index: 2;
+        }
+
+        /* --- TACTICAL MAP --- */
+        .tactical-map { 
+            position: relative; background: #131b2c; padding: 0; display: flex; justify-content: center; 
+            align-items: center; overflow: hidden; cursor: crosshair; 
+        }
+        
+        .tactical-map::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 40px 40px; pointer-events: none; z-index: 1;
+        }
+
+        .map-svg { width: 100%; height: 100%; min-height: 500px; pointer-events: none; z-index: 2; position: relative; }
+        .landmass { fill: #1c263a; } 
+        
+        .route-path { 
+            fill: none; stroke: var(--primary); stroke-width: 4; stroke-dasharray: 12 8; 
+            stroke-linecap: round; filter: drop-shadow(0 0 8px var(--primary));
+        }
+        .waypoint { fill: var(--bg); stroke: var(--primary); stroke-width: 3; filter: drop-shadow(0 0 5px var(--primary)); }
+        #typewriter-text{
+            font-size:70px;
+        }
+        .hazard-buffer { 
+            fill: rgba(239, 68, 68, 0.15); stroke: var(--alert); stroke-dasharray: 6 6; stroke-width: 2; 
+            animation: radarPulse 3s ease-out infinite; transform-origin: center; 
+        }
+        .drift-vector { fill: none; stroke: var(--warning); stroke-width: 2.5; stroke-dasharray: 5 5; filter: drop-shadow(0 0 4px var(--warning)); }
+        .drift-arrow { fill: var(--warning); }
+        
+        .ping-ripple { position: absolute; border-radius: 50%; border: 2px solid var(--primary); transform: translate(-50%, -50%); animation: radarPing 1s ease-out forwards; pointer-events: none; z-index: 3;}
+        .coord-overlay { position: absolute; bottom: 20px; right: 25px; font-family: 'Fira Code', monospace; font-size: 0.8rem; color: var(--primary); pointer-events: none; z-index: 3;}
+
+        /* --- TICKER --- */
+        .ticker-wrap {
+            width: 100%; overflow: hidden; background: rgba(0, 0, 0, 0.5);
+            border-top: 1px solid rgba(0, 229, 255, 0.1); border-bottom: 1px solid rgba(0, 229, 255, 0.1);
+            padding: 8px 0; margin-top: 40px; display: flex;
+        }
+        .ticker-content {
+            display: inline-flex; white-space: nowrap; animation: ticker 25s linear infinite;
+            font-family: 'Fira Code', monospace; font-size: 0.85rem; color: var(--primary);
+        }
+        .ticker-item { margin-right: 4rem; display: flex; align-items: center; gap: 8px; }
+        .ticker-dot { width: 6px; height: 6px; background: var(--success); border-radius: 50%; box-shadow: 0 0 5px var(--success); }
+
+        /* --- SECTIONS --- */
+        .section-padding { padding: 100px 5%; max-width: 1200px; margin: 0 auto; position: relative; z-index: 10; }
+        .section-desc { text-align: center; color: var(--text-muted); margin-bottom: 4rem; max-width: 700px; margin-inline: auto; font-size: 1.1rem; }
+        
+        .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 2.5rem; position: relative; z-index: 1; }
+        
+        .pipeline-card { 
+            background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(12px); 
+            border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 2.5rem; 
+            position: relative; display: flex; flex-direction: column; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5); transition: transform 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease; 
+        }
+        .pipeline-card:hover { transform: translateY(-10px); border-color: rgba(0, 229, 255, 0.4); box-shadow: 0 20px 40px rgba(0, 229, 255, 0.1); }
+        
+        .pipeline-card::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+            border-radius: 16px 16px 0 0; opacity: 0; transition: opacity 0.4s ease;
+        }
+        .pipeline-card:hover::before { opacity: 1; }
+
+        .card-badge { 
+            width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; 
+            font-family: 'Fira Code', monospace; font-size: 1.2rem; font-weight: 700; margin-bottom: 1.5rem; 
+        }
+        .badge-1 { color: var(--primary); background: rgba(0,229,255,0.1); border: 1px solid rgba(0,229,255,0.3); box-shadow: 0 0 15px rgba(0,229,255,0.2); }
+        .badge-2 { color: var(--alert); background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); box-shadow: 0 0 15px rgba(239,68,68,0.2); }
+        .badge-3 { color: var(--success); background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); box-shadow: 0 0 15px rgba(16,185,129,0.2); }
+        
+        .card-title { font-size: 1.5rem; color: #fff; margin-bottom: 0.3rem; font-weight: 700; letter-spacing: -0.5px;}
+        .card-subtitle { font-size: 1rem; margin-bottom: 1.5rem; font-weight: 600; }
+        .sub-1 { color: var(--primary); } .sub-2 { color: var(--alert); } .sub-3 { color: var(--success); }
+        .card-desc { color: var(--text-muted); font-size: 1rem; line-height: 1.7; flex-grow: 1; margin-bottom: 2rem;}
+
+        /* --- TECH STACK PILLS --- */
+        .tech-pill {
+            background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1);
+            padding: 0.8rem 1rem; border-radius: 8px; font-family: 'Fira Code', monospace;
+            font-size: 0.85rem; display: flex; align-items: center; justify-content: center;
+            transition: all 0.3s ease; color: var(--text-muted); text-align: center;
+        }
+        .tech-pill:hover { background: rgba(0,229,255,0.05); border-color: var(--primary); color: var(--primary); }
+
+        .split-section { display: grid; grid-template-columns: 1fr 1fr; gap: 5rem; align-items: center; }
+        .impact-list { list-style: none; }
+        .impact-list li { margin-bottom: 1.8rem; padding-left: 2.5rem; position: relative; color: var(--text-muted); font-size: 1.05rem; }
+        .impact-list li::before { content: '→'; position: absolute; left: 0; color: var(--primary); font-weight: bold; font-size: 1.2rem;}
+        .impact-list strong { color: var(--text-main); }
+
+        .video-polaroid {
+            background: #000000; padding: 1rem; border-radius: 12px; box-shadow: 0 25px 50px rgba(0,0,0,0.8);
+            transform: rotate(2deg); transition: transform 0.4s ease; position: relative;
+        }
+        .video-polaroid:hover { transform: rotate(0deg) scale(1.02); }
+        .video-polaroid video { width: 100%; border-radius: 4px; display: block; background: #000; }
+        .video-caption { font-family: 'Fira Code', monospace; color: #03ddff; text-align: center; margin-top: 1rem; font-weight: 600; font-size: 0.9rem;}
+
+        footer { border-top: 1px solid rgba(255,255,255,0.05); padding: 3rem 5%; text-align: center; color: var(--text-muted); font-size: 0.9rem; position: relative; z-index: 10; }
+
+        /* --- ANIMATIONS --- */
+        .reveal { opacity: 0; transform: translateY(40px); transition: all 0.8s cubic-bezier(0.5, 0, 0, 1); }
+        .reveal.active { opacity: 1; transform: translateY(0); }
+        
+        @keyframes pulse { 0%, 100% { box-shadow: 0 0 10px var(--primary); opacity: 1; } 50% { box-shadow: 0 0 20px var(--primary); opacity: 0.5; } }
+        @keyframes blinkCursor { 0%, 50% { opacity: 1; } 50.1%, 100% { opacity: 0; } }
+        @keyframes ticker { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+        @keyframes radarPing { 0% { width: 0; height: 0; opacity: 1; } 100% { width: 120px; height: 120px; opacity: 0; } }
+        @keyframes radarPulse { 0% { transform: scale(0.95); opacity: 0.8; } 50% { transform: scale(1.05); opacity: 1; } 100% { transform: scale(0.95); opacity: 0.8; } }
+
+        @media (max-width: 900px) {
+            .dashboard-ui, .split-section { grid-template-columns: 1fr; }
+            nav { grid-template-columns: 1fr 1fr; }
+            .nav-links { display: none; }
+            .logo { justify-content: flex-end; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Ambient Background Glows -->
+    <div class="ambient-glow glow-1"></div>
+    <div class="ambient-glow glow-2"></div>
+
+    <nav>
+        <div class="nav-left">
+            <span class="team-tag">CRYO EVADERS</span>
+        </div>
+        
+        <a href="#" class="logo">
+            <img src="glacier.png" alt="Iceberg" class="logo-icon">
+            <div class="logo-text-container">
+                <span class="logo-text">ICENAV</span>
+            </div>
+        </a>
+
+        <div class="nav-links">
+            <a href="#architecture">Pipeline</a>
+            <a href="#stack">Stack</a>
+            <a href="#feasibility">Feasibility</a>
+            <a href="#impact">Impact</a>
+        </div>
+    </nav>
+
+    <section class="hero" id="hero-section">
+        <div class="badge">
+            <span style="width:8px; height:8px; background:var(--alert); border-radius:50%; animation: blinkCursor 1s infinite; box-shadow: 0 0 8px var(--alert);"></span>
+            SIH26059
+        </div>
+        
+        <h3 class="typewriter-container js-type" id="typewriter-text" data-html="4D Predictive <br><span class='gradient-text'>Decision Engine</span>"></h3>
+        
+        <p class="subtitle">An AI-Enabled Antarctic Sea-Ice, Iceberg Trajectory, and Navigation Decision Support System designed for Transportation & Logistics.</p>
+
+        <div class="dashboard-wrapper">
+            <div class="dashboard-ui" id="parallax-dashboard">
+                
+                <div class="telemetry-panel">
+                    <div>
+                        <div class="panel-header">Visual Feeds</div>
+                        <div class="feed-container">
+                            <div class="feed-card">
+                                <span class="feed-badge">CAM: BOW</span>
+                                <img src="ship.png" alt="Ship view" class="feed-img1">
+                            </div>
+                            <div class="feed-card">
+                                <span class="feed-badge">RADAR: ICE</span>
+                                <img src="iceberg.png" alt="Iceberg view" class="feed-img">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="panel-header">Vessel Telemetry</div>
+                        <div class="data-readout"><span class="data-label">LAT / LON</span> <span class="data-value">68°34'S / 77°58'E</span></div>
+                        <div class="data-readout"><span class="data-label">HEADING</span> <span class="data-value">142° SE</span></div>
+                        <div class="data-readout"><span class="data-label">SPEED (SOG)</span> <span class="data-value">12.4 kts</span></div>
+                    </div>
+
+                    <div>
+                        <div class="panel-header" style="margin-top: 2rem;">AI Pipeline Status</div>
+                        
+                        <div class="module-status">
+                            <div class="module-title"><span class="status-dot"></span> ConvLSTM Engine</div>
+                            <div class="data-readout" style="margin:0;"><span class="data-label">Input</span> <span class="data-value" style="font-size:0.75rem;">NSIDC AMSR2</span></div>
+                            <div class="data-readout" style="margin:0;"><span class="data-label">SIC Map</span> <span class="data-value active">LIVE GRID</span></div>
+                        </div>
+
+                        <div class="module-status">
+                            <div class="module-title"><span class="status-dot" style="background:var(--warning); box-shadow:0 0 8px var(--warning);"></span> XGBoost Engine</div>
+                            <div class="data-readout" style="margin:0;"><span class="data-label">Active Trackers</span> <span class="data-value">7 Hazards</span></div>
+                            <div class="data-readout" style="margin:0;"><span class="data-label">Physics Drift</span> <span class="data-value" style="color:var(--warning);">COMPUTING</span></div>
+                        </div>
+
+                        <div class="module-status">
+                            <div class="module-title"><span class="status-dot"></span> TD-A* Routing</div>
+                            <div class="data-readout" style="margin:0;"><span class="data-label">Cost Output</span> <span class="data-value active">OPTIMIZED</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tactical Map with Animated Ship -->
+                <div class="tactical-map" id="radar-map">
+                    <svg class="map-svg" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid slice">
+                        <polygon class="landmass" points="0,0 250,0 350,150 200,300 300,500 0,500" />
+                        <polygon class="landmass" points="600,0 800,0 800,500 700,500 750,300 650,150" />
+
+                        <!-- Path shifted to start visibly from the left -->
+                        <path id="ship-track" class="route-path" d="M 150,320 L 300,380 L 450,300 L 600,260 L 750,350" />
+
+                        <!-- Waypoints for the path -->
+                        <circle cx="150" cy="320" r="6" class="waypoint" />
+                        <circle cx="300" cy="380" r="6" class="waypoint" />
+                        <circle cx="450" cy="300" r="6" class="waypoint" />
+                        <circle cx="600" cy="260" r="6" class="waypoint" />
+                        <circle cx="750" cy="350" r="6" class="waypoint" />
+                        
+                        <!-- Hazard 1 -->
+                        <g transform="translate(550, 400)">
+                            <circle cx="0" cy="0" r="80" class="hazard-buffer" />
+                            <line x1="0" y1="0" x2="35" y2="-55" class="drift-vector" />
+                            <polygon points="35,-55 25,-48 38,-40" class="drift-arrow" /> 
+                            <image href="iceberg.png" x="-20" y="-20" width="40" height="40" filter="drop-shadow(0 4px 6px rgba(0,0,0,0.5))" />
+                            <polygon points="-10,5 -5,-15 5,-10 15,5 0,15" fill="#ffffff" opacity="0.1" /> 
+                        </g>
+
+                        <!-- Hazard 2 (Top Left) -->
+                        <g transform="translate(200, 150)">
+                            <circle cx="0" cy="0" r="60" class="hazard-buffer" />
+                            <line x1="0" y1="0" x2="40" y2="20" class="drift-vector" />
+                            <image href="iceberg.png" x="-25" y="-25" width="50" height="50" filter="drop-shadow(0 4px 6px rgba(0,0,0,0.5))" />
+                            <polygon points="-15,10 -5,-20 10,-10 20,5 -5,20" fill="#ffffff" opacity="0.1" /> 
+                        </g>
+
+                        <!-- Hazard 3 (Near Path Middle) -->
+                        <g transform="translate(480, 220)">
+                            <circle cx="0" cy="0" r="70" class="hazard-buffer" />
+                            <line x1="0" y1="0" x2="-20" y2="40" class="drift-vector" />
+                            <image href="iceberg.png" x="-30" y="-30" width="60" height="60" filter="drop-shadow(0 4px 6px rgba(0,0,0,0.5))" />
+                            <polygon points="-20,15 -10,-25 15,-15 25,10 -5,25" fill="#ffffff" opacity="0.1" /> 
+                        </g>
+
+                        <!-- Hazard 4 (Bottom Left) -->
+                        <g transform="translate(150, 420)">
+                            <circle cx="0" cy="0" r="45" class="hazard-buffer" />
+                            <line x1="0" y1="0" x2="10" y2="-30" class="drift-vector" />
+                            <image href="iceberg.png" x="-20" y="-20" width="40" height="40" filter="drop-shadow(0 4px 6px rgba(0,0,0,0.5))" />
+                            <polygon points="-10,5 -5,-15 5,-10 15,5 0,15" fill="#ffffff" opacity="0.1" /> 
+                        </g>
+
+                        <!-- Hazard 5 (Top Right) -->
+                        <g transform="translate(700, 120)">
+                            <circle cx="0" cy="0" r="55" class="hazard-buffer" />
+                            <line x1="0" y1="0" x2="-25" y2="-15" class="drift-vector" />
+                            <image href="iceberg.png" x="-22" y="-22" width="45" height="45" filter="drop-shadow(0 4px 6px rgba(0,0,0,0.5))" />
+                            <polygon points="-12,8 -8,-18 8,-12 18,8 -2,18" fill="#ffffff" opacity="0.1" /> 
+                        </g>
+
+                        <!-- Hazard 6 (Mid Right border) -->
+                        <g transform="translate(780, 450)">
+                            <circle cx="0" cy="0" r="65" class="hazard-buffer" />
+                            <line x1="0" y1="0" x2="-35" y2="-20" class="drift-vector" />
+                            <image href="iceberg.png" x="-28" y="-28" width="55" height="55" filter="drop-shadow(0 4px 6px rgba(0,0,0,0.5))" />
+                            <polygon points="-18,12 -10,-25 10,-15 20,10 -8,22" fill="#ffffff" opacity="0.1" /> 
+                        </g>
+
+                        <!-- Ship Animating Along the New Expanded Path -->
+                        <g>
+                            <animateMotion dur="18s" repeatCount="indefinite" rotate="auto" path="M 150,320 L 300,380 L 450,300 L 600,260 L 750,350" />
+                            <g transform="rotate(90)">
+                                <!-- Scaled up from 40x40 to 80x80 -->
+                                <image href="ship.png" x="-40" y="-40" width="100" height="100" filter="drop-shadow(0 0 10px rgba(0,229,255,0.5))" />
+                                <polygon points="-20,30 0,-30 20,30 0,16" fill="#00e5ff" opacity="0.1" />
+                            </g>
+                        </g>
+
+                    </svg>
+                    <div class="coord-overlay">GRID: 5NM SPATIAL | T+24 HR FORECAST</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- LIVE DATA TICKER -->
+    <div class="ticker-wrap reveal">
+        <div class="ticker-content">
+            <div class="ticker-item"><span class="ticker-dot"></span> STREAMING PUBLIC DATA: BYU Antarctic Iceberg Tracking</div>
+            <div class="ticker-item"><span class="ticker-dot"></span> NSIDC AMSR2 Satellite Telemetry</div>
+            <div class="ticker-item"><span class="ticker-dot"></span> Copernicus CDS ERA5 Wind Vectors</div>
+            <div class="ticker-item"><span class="ticker-dot"></span> Copernicus Marine Service Ocean Currents</div>
+            <div class="ticker-item"><span class="ticker-dot"></span> STREAMING PUBLIC DATA: BYU Antarctic Iceberg Tracking</div>
+            <div class="ticker-item"><span class="ticker-dot"></span> NSIDC AMSR2 Satellite Telemetry</div>
+            <div class="ticker-item"><span class="ticker-dot"></span> Copernicus CDS ERA5 Wind Vectors</div>
+            <div class="ticker-item"><span class="ticker-dot"></span> Copernicus Marine Service Ocean Currents</div>
+        </div>
+    </div>
+
+    <!-- ARCHITECTURE -->
+    <section id="architecture" class="section-padding">
+        <div style="text-align: center; width: 100%;">
+            <h2 class="section-title typewriter-container js-type" data-html="Integrated <span class='gradient-text'>AI Pipeline</span>"></h2>
+        </div>
+        <p class="section-desc">Replaces static manual route planning with a dynamic, hazard-aware system for research vessel captains. Connects disparate standalone systems into a cohesive engine.</p>
+
+        <div class="grid-3" style="margin-top: 3rem;">
+            <div class="pipeline-card">
+                <div class="card-badge badge-1">01</div>
+                <div class="card-title">ConvLSTM</div>
+                <div class="card-subtitle sub-1">Sea-Ice Forecasting</div>
+                <div class="card-desc">Processes spatiotemporal satellite SIC datasets. Outputs a rolling recursive N-day forecast raster grid for ice concentration.</div>
+            </div>
+            
+            <div class="pipeline-card">
+                <div class="card-badge badge-2">02</div>
+                <div class="card-title">XGBoost</div>
+                <div class="card-subtitle sub-2">Trajectory Drift</div>
+                <div class="card-desc">Evaluates complex meteorological variables via physics-prior delta to predict individual iceberg drift pathways.</div>
+            </div>
+
+            <div class="pipeline-card">
+                <div class="card-badge badge-3">03</div>
+                <div class="card-title">TD-A* Routing</div>
+                <div class="card-subtitle sub-3">Decision Engine</div>
+                <div class="card-desc">Discretizes domain into a (x, y, t) matrix. Converts sea-ice resistance and inflated iceberg safety buffers into edge costs to find the fuel-optimal path.</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- TECH STACK -->
+    <section id="stack" class="section-padding reveal">
+        <div style="text-align: center; width: 100%;">
+            <h2 class="section-title typewriter-container js-type" data-html="Core <span class='gradient-text'>Technologies</span>"></h2>
+        </div>
+        <p class="section-desc">Built for scale, relying on powerful open-source data frameworks and mapping libraries.</p>
+        
+        <div class="grid-3">
+            <div class="pipeline-card" style="padding: 1.5rem;">
+                <h3 style="color: var(--primary); font-size: 1.1rem; margin-bottom: 1.5rem; text-align: center; font-weight: 700;">Frontend & Mapping</h3>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <div class="tech-pill">React / TypeScript</div>
+                    <div class="tech-pill">Leaflet & Mapbox API</div>
+                </div>
+            </div>
+
+            <div class="pipeline-card" style="padding: 1.5rem;">
+                <h3 style="color: var(--warning); font-size: 1.1rem; margin-bottom: 1.5rem; text-align: center; font-weight: 700;">Backend & Data Handling</h3>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <div class="tech-pill">Python & FastAPI</div>
+                    <div class="tech-pill">xarray / rasterio / netCDF4</div>
+                </div>
+            </div>
+
+            <div class="pipeline-card" style="padding: 1.5rem;">
+                <h3 style="color: var(--alert); font-size: 1.1rem; margin-bottom: 1.5rem; text-align: center; font-weight: 700;">Machine Learning Frameworks</h3>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <div class="tech-pill">PyTorch / TensorFlow</div>
+                    <div class="tech-pill">XGBoost</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FEASIBILITY -->
+    <section id="feasibility" class="section-padding reveal">
+        <div class="split-section">
+            <div>
+                <h2 class="section-title typewriter-container js-type" style="text-align: left; display: block;" data-html="Feasibility &amp; <br><span class='gradient-text'>Dynamic Adaptation</span>"></h2>
+                <p style="color: var(--text-muted); margin-bottom: 2rem; font-size: 1.1rem;">The Antarctic environment is incredibly volatile, with sea-ice concentration shifting drastically over the annual cycle. Our predictive models adapt to massive spatial shifts.</p>
+                <ul class="impact-list">
+                    <li><strong>Seasonal Volatility:</strong> The ConvLSTM module is trained on historical data spanning the entire annual freeze-thaw cycle (as seen in the 2017 variance) to maintain accuracy year-round.</li>
+                    <li><strong>Incomplete SAR Coverage:</strong> Fuses coarser AMSR2 passive-microwave daily data to fill Sentinel-1 gaps, actively flagging low-confidence grid cells.</li>
+                    <li><strong>Erratic Iceberg Drift:</strong> Blends XGBoost extrapolation with physics-based drift priors to manage looping and stagnation.</li>
+                </ul>
+            </div>
+            
+            <div class="video-polaroid">
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0.5rem 1rem; font-family: 'Fira Code', monospace; font-size: 0.8rem; color: #3b82f6; font-weight: bold;">
+                    <span>>_ SIC_ANNUAL_CYCLE</span>
+                    <span style="color: var(--alert); animation: blinkCursor 1.5s infinite;">● REC</span>
+                </div>
+                
+                <video autoplay loop muted playsinline>
+                    <source src="conc.mp4" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+                
+                <div class="video-caption">CONVLSTM TRAINING DATA</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- GLOBAL IMPACT SECTION -->
+    <section id="impact" class="section-padding">
+        <div style="text-align: center; width: 100%;">
+            <h2 class="section-title typewriter-container js-type" data-html="Global <span class='gradient-text'>Impact</span>"></h2>
+        </div>
+        <div class="grid-3" style="margin-top: 3rem;">
+            <div class="pipeline-card" style="border-top: 3px solid var(--primary); padding: 2rem;">
+                <h3 style="margin-bottom: 1rem; display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 1.5rem;">🌍</span> Environmental
+                </h3>
+                <p style="color: var(--text-muted); font-size: 0.95rem;">Treats fuel efficiency as an explicit cost variable in the TD-A* algorithm. Fuel-optimized routing directly reduces carbon footprints and harmful black-carbon emissions.</p>
+            </div>
+            <div class="pipeline-card" style="border-top: 3px solid var(--success); padding: 2rem;">
+                <h3 style="margin-bottom: 1rem; display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 1.5rem;">🛡️️</span> Social / Safety
+                </h3>
+                <p style="color: var(--text-muted); font-size: 0.95rem;">Provides early warnings before hazards are visually detectable. Significantly lowers the risk of vessel-ice collisions, protecting crews and scientists.</p>
+            </div>
+            <div class="pipeline-card" style="border-top: 3px solid var(--warning); padding: 2rem;">
+                <h3 style="margin-bottom: 1rem; display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 1.5rem;">🇮🇳</span> Indigenous Capability
+                </h3>
+                <p style="color: var(--text-muted); font-size: 0.95rem;">Builds native forecasting capacity. Reduces the Ministry of Earth Sciences' (MoES) dependence on international ice services for mission-critical logistics.</p>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <p>&copy; 2026 SMART INDIA HACKATHON. Developed by Team CRYO EVADERS for Problem Statement SIH26059.</p>
+    </footer>
+
+    <script>
+        // --- 1. CRASH-PROOF JS TYPEWRITER WITH BLINKING CURSOR ---
+        function typeWriterHTML(element, speed = 30) {
+            if (element.classList.contains('typed')) return; 
+            element.classList.add('typed');
+            element.style.visibility = 'visible';
+            
+            const rawHTML = element.getAttribute('data-html');
+            element.innerHTML = '<span class="text-content"></span><span class="type-cursor"></span>';
+            const target = element.querySelector('.text-content');
+            
+            let i = 0;
+            let textBuffer = '';
+
+            function type() {
+                if (i < rawHTML.length) {
+                    let char = rawHTML.charAt(i);
+                    textBuffer += char;
+                    i++;
+
+                    if (char === '<') {
+                        while (i < rawHTML.length && rawHTML.charAt(i - 1) !== '>') {
+                            textBuffer += rawHTML.charAt(i);
+                            i++;
+                        }
+                        target.innerHTML = textBuffer;
+                        type(); 
+                    } else {
+                        target.innerHTML = textBuffer;
+                        setTimeout(type, speed);
+                    }
+                }
+            }
+            type();
+        }
+
+        // --- 2. SCROLL OBSERVER TO TRIGGER TYPEWRITERS & REVEALS ---
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if(entry.isIntersecting) {
+                    if (entry.target.classList.contains('js-type')) {
+                        typeWriterHTML(entry.target);
+                    }
+                    entry.target.classList.add('active'); 
+                }
+            });
+        }, { threshold: 0.15, rootMargin: "0px 0px -50px 0px" });
+
+        document.querySelectorAll('.reveal, .js-type').forEach(el => observer.observe(el));
+
+        setTimeout(() => {
+            const mainHeading = document.querySelector('h1.js-type');
+            if(mainHeading) typeWriterHTML(mainHeading);
+        }, 300);
+
+        // --- 3. 3D DASHBOARD PARALLAX EFFECT ---
+        const heroSection = document.getElementById('hero-section');
+        const dashboard = document.getElementById('parallax-dashboard');
+
+        heroSection.addEventListener('mousemove', (e) => {
+            const xAxis = (window.innerWidth / 2 - e.pageX) / 90;
+            const yAxis = (window.innerHeight / 2 - e.pageY) / 90;
+            dashboard.style.transform = `rotateY(${xAxis}deg) rotateX(${yAxis}deg)`;
+        });
+
+        heroSection.addEventListener('mouseleave', () => {
+            dashboard.style.transform = `rotateY(0deg) rotateX(0deg)`;
+            dashboard.style.transition = `transform 0.6s cubic-bezier(0.23, 1, 0.32, 1)`;
+        });
+        
+        heroSection.addEventListener('mouseenter', () => {
+            dashboard.style.transition = `none`;
+        });
+
+        // --- 4. TACTICAL MAP INTERACTIVE PING ---
+        const radarMap = document.getElementById('radar-map');
+        radarMap.addEventListener('click', function(e) {
+            const rect = this.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            const ripple = document.createElement('div');
+            ripple.classList.add('ping-ripple');
+            ripple.style.left = `${x}px`;
+            ripple.style.top = `${y}px`;
+            
+            this.appendChild(ripple);
+
+            setTimeout(() => {
+                ripple.remove();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
